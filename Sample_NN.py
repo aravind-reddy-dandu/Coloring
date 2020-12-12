@@ -8,35 +8,42 @@ import pickle
 import pandas as pd
 
 
+# Relu activation
 def relu_activation(z):
     a = np.maximum(0, z)
     return a
 
 
-def params_initiate(layer_sizes):
-    params = {}
-    for i in range(1, len(layer_sizes)):
-        params['W' + str(i)] = np.random.randn(layer_sizes[i], layer_sizes[i - 1]) * 0.01
-        params['B' + str(i)] = np.random.randn(layer_sizes[i], 1) * 0.01
-    return params
+# Initiating parameters
+def params_initiate(layer_widths):
+    parameters = {}
+    for i in range(1, len(layer_widths)):
+        parameters['W' + str(i)] = np.random.randn(layer_widths[i], layer_widths[i - 1]) * 0.01
+        parameters['B' + str(i)] = np.random.randn(layer_widths[i], 1) * 0.01
+    return parameters
 
 
+# Forward propagation
 def forward_propagation(X_train, params):
     layers = len(params) // 2
     values = {}
+    # Computing each layer with current weights
     for i in range(1, layers + 1):
         if i == 1:
+            # If first layer
             values['Z' + str(i)] = np.dot(params['W' + str(i)], X_train) + params['B' + str(i)]
             values['A' + str(i)] = relu_activation(values['Z' + str(i)])
         else:
             values['Z' + str(i)] = np.dot(params['W' + str(i)], values['A' + str(i - 1)]) + params['B' + str(i)]
             if i == layers:
+                # If last layer, skipping activation
                 values['A' + str(i)] = values['Z' + str(i)]
             else:
                 values['A' + str(i)] = relu_activation(values['Z' + str(i)])
     return values
 
 
+# Using mean squared error to compute cost
 def compute_cost(values, Y_train):
     layers = len(values) // 2
     Y_pred = values['A' + str(layers)]
@@ -44,18 +51,23 @@ def compute_cost(values, Y_train):
     return cost
 
 
+# Using all the derivatives to do back propagation
 def backward_propagation(params, values, X_train, Y_train):
     layers = len(params) // 2
     m = len(Y_train)
     grads = {}
     for i in range(layers, 0, -1):
         if i == layers:
+            # If last layer, using derivative of mean squared error
             dA = 1 / m * (values['A' + str(i)] - Y_train)
             dZ = dA
         else:
+            # Chain rule otherwise
             dA = np.dot(params['W' + str(i + 1)].T, dZ)
             dZ = np.multiply(dA, np.where(values['A' + str(i)] >= 0, 1, 0))
+        # Storing directions
         if i == 1:
+            # If first layer
             grads['W' + str(i)] = 1 / m * np.dot(dZ, X_train.T)
             grads['B' + str(i)] = 1 / m * np.sum(dZ, axis=1, keepdims=True)
         else:
@@ -64,6 +76,7 @@ def backward_propagation(params, values, X_train, Y_train):
     return grads
 
 
+# Updating weights
 def update_params(params, grads, learning_rate):
     layers = len(params) // 2
     params_updated = {}
@@ -73,13 +86,17 @@ def update_params(params, grads, learning_rate):
     return params_updated
 
 
+# Driver code if Neural network
 def model(X_train, Y_train, layer_sizes, num_iters, learning_rate):
+    # Initiating parameters
     params = params_initiate(layer_sizes)
+    # Looping and fitting data
     for i in range(num_iters):
         values = forward_propagation(X_train.T, params)
         cost = compute_cost(values, Y_train.T)
         grads = backward_propagation(params, values, X_train.T, Y_train.T)
         params = update_params(params, grads, learning_rate)
+        # Printing cost for every 100 iterations
         if i % 100 == 0:
             print('Cost at iteration ' + str(i + 1) + ' = ' + str(cost) + '\n')
     return params
@@ -96,20 +113,21 @@ def compute_accuracy(X_train, X_test, Y_train, Y_test, params):
     return train_acc, test_acc
 
 
+# Forward propagating through data and predicting values
 def predict(X, params):
     values = forward_propagation(X.T, params)
     predictions = values['A' + str(len(values) // 2)].T
     return predictions
 
 
-# data = load_boston()  # load dataset
-# X, Y = data["data"][:, :12], data["target"]  # separate data into input and output features
+# image_part = load_boston()  # load dataset
+# X, Y = image_part["image_part"][:, :12], image_part["target"]  # separate image_part into input and output features
 # X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
-#                                                     test_size=0.2)  # split data into train and test sets in 80-20 ratio
-# layer_sizes = [12, 5, 5, 1]  # set layer sizes, do not change the size of the first and last layer
+#                                                     test_size=0.2)  # split image_part into train and test sets in 80-20 ratio
+# layer_widths = [12, 5, 5, 1]  # set layer sizes, do not change the size of the first and last layer
 # num_iters = 1000  # set number of iterations over the training set(also known as epochs in batch gradient descent context)
 # learning_rate = 0.03  # set learning rate for gradient descent
-# params = model(X_train, Y_train, layer_sizes, num_iters, learning_rate)  # train the model
+# params = model(X_train, Y_train, layer_widths, num_iters, learning_rate)  # train the model
 # train_acc, test_acc = compute_accuracy(X_train, X_test, Y_train, Y_test, params)  # get training and test accuracy
 # print('Root Mean Squared Error on Training Data = ' + str(train_acc))
 # print('Root Mean Squared Error on Test Data = ' + str(test_acc))
@@ -137,14 +155,14 @@ def rgb2gray(rgb):
 # store = {}
 # for i in range(3):
 #     y = left_actual[:, i]
-#     layer_sizes = [1, 5, 5, 1]  # set layer sizes, do not change the size of the first and last layer
+#     layer_widths = [1, 5, 5, 1]  # set layer sizes, do not change the size of the first and last layer
 #     num_iters = 1000  # set number of iterations over the training set(also known as epochs in batch gradient descent context)
 #     learning_rate = 0.1  # set learning rate for gradient descent
-#     params = model(X, y, layer_sizes, num_iters, learning_rate)  # train the model
+#     params = model(X, y, layer_widths, num_iters, learning_rate)  # train the model
 #     train_acc, test_acc = compute_accuracy(X, None, y, None, params)  # get training and test accuracy
 #     print('Root Mean Squared Error on Training Data = ' + str(train_acc))
 #     print('Root Mean Squared Error on Test Data = ' + str(test_acc))
-#     y_pred = predict(right_half.reshape(-1, 1), params)
+#     y_pred = find_labels(right_half.reshape(-1, 1), params)
 #     y_pred = np.array(y_pred)
 #     store[i] = y_pred.reshape(right_half.shape)
 #     print(y_pred)
@@ -157,12 +175,12 @@ def rgb2gray(rgb):
 
 # X = np.array(pd.read_csv('D:\\Study\\Intro_AI\\Coloring_Assignment\\patches/X_train.csv'))
 # y = np.array(pd.read_csv('D:\\Study\\Intro_AI\\Coloring_Assignment\\patches/Y_train.csv'))[:, 0]
-# layer_sizes = [100, 10, 10, 1]  # set layer sizes, do not change the size of the first and last layer
+# layer_widths = [100, 10, 10, 1]  # set layer sizes, do not change the size of the first and last layer
 # num_iters = 1500  # set number of iterations over the training set(also known as epochs in batch gradient descent context)
 # learning_rate = 0.1  # set learning rate for gradient descent
-# params = model(X, y, layer_sizes, num_iters, learning_rate)  # train the model
+# params = model(X, y, layer_widths, num_iters, learning_rate)  # train the model
 # train_acc, test_acc = compute_accuracy(X, None, y, None, params)  # get training and test accuracy
 # print('Root Mean Squared Error on Training Data = ' + str(train_acc))
 # print('Root Mean Squared Error on Test Data = ' + str(test_acc))
-# y_pred = predict(right_half.reshape(-1, 1), params)
+# y_pred = find_labels(right_half.reshape(-1, 1), params)
 # y_pred = np.array(y_pred)

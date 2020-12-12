@@ -75,7 +75,7 @@ left_actual_flat = left_actual.reshape((-1, 3))
 
 # -------------------
 # kmeans = KMeans(n_clusters=5, random_state=0).fit(left_actual_flat)
-# labels = kmeans.labels_.reshape(left_actual.shape[0], left_actual.shape[1])
+# clusters = kmeans.labels_.reshape(left_actual.shape[0], left_actual.shape[1])
 # centers = kmeans.cluster_centers_
 
 m_kmeans = K_Means(k=5, max_iter=1000, tol=0.001)
